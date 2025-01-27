@@ -1,0 +1,30 @@
+{
+  "name": "issue-tracker-server",
+  "version": "0.1.1",
+  "description": "Backend for the issue tracking system",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon src/index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@alicloud/dingtalk": "^2.1.83",
+    "axios": "^1.7.9",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dingtalk-jsapi": "^3.0.12",
+    "dotenv": "^16.4.7",
+    "express": "^4.18.2",
+    "express-jwt": "^8.5.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.8.6",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "socket.io": "^4.7.1",
+    "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "jest": "^29.6.2",
+    "nodemon": "^3.0.1"
+  }
+}
