@@ -23,11 +23,11 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => console.error('Could not connect to MongoDB:', err));
 
 // 路由
-const projectRoutes = require('./routes/projects');
-const issueRoutes = require('./routes/issues');
+const issuesRouter = require('./routes/issues');
+const projectsRouter = require('./src/routes/projects');
 
-app.use('/api/projects', projectRoutes);
-app.use('/api/issues', issueRoutes);
+app.use('/api/issues', issuesRouter);
+app.use('/api/projects', projectsRouter);
 
 // 错误处理
 app.use((err, req, res, next) => {
