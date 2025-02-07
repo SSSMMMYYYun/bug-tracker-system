@@ -2,25 +2,43 @@ const mongoose = require('mongoose');
 
 const issueSchema = new mongoose.Schema({
   projectId: {
-    type: String,
-    required: true
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Project',
+    default: null
   },
   moduleId: {
-    type: String
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Module',
+    default: null
+  },
+  sequenceNumber: {
+    type: Number,
+    default: 1
   },
   type: {
     type: String,
-    default: ''
+    enum: ['体验问题', 'bug', '转需求', '其他'],
+    default: '其他'
   },
   status: {
     type: String,
-    default: ''
+    enum: ['ongoing', '开发完成待验证', '已解决', '待开发解决', '测试复现', 'close', 'reopen'],
+    default: 'ongoing'
   },
   description: {
     type: String,
     default: ''
   },
   priority: {
+    type: String,
+    enum: ['P0', 'P1', 'P2'],
+    default: 'P1'
+  },
+  title: {
+    type: String,
+    default: ''
+  },
+  assignee: {
     type: String,
     default: ''
   },
@@ -30,7 +48,7 @@ const issueSchema = new mongoose.Schema({
   },
   reportTime: {
     type: Date,
-    default: null
+    default: Date.now
   },
   resolver: {
     type: String,

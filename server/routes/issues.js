@@ -26,56 +26,104 @@ router.get('/', async (req, res) => {
 router.post('/batch', async (req, res) => {
   try {
     const { projectId, moduleId, issues } = req.body;
+    console.log('接收到的数据:', { projectId, moduleId, issues });
+
     if (!projectId || !issues) {
-      return res.status(400).json({ message: '缺少必要参数' });
+      return res.status(400).json({ 
+        message: '缺少必要参数',
+        details: 'projectId 和 issues 是必填字段'
+      });
+    }
+
+    try {
+      // 验证 projectId 是否为有效的 ObjectId
+      if (!mongoose.Types.ObjectId.isValid(projectId)) {
+        return res.status(400).json({
+          message: '无效的项目ID',
+          details: 'projectId 必须是有效的 ObjectId'
+        });
+      }
+
+      // 如果有 moduleId，验证它是否为有效的 ObjectId
+      if (moduleId && moduleId !== 'all' && !mongoose.Types.ObjectId.isValid(moduleId)) {
+        return res.status(400).json({
+          message: '无效的模块ID',
+          details: 'moduleId 必须是有效的 ObjectId'
+        });
+      }
+    } catch (error) {
+      console.error('ID validation error:', error);
+      return res.status(400).json({
+        message: 'ID验证失败',
+        error: error.message
+      });
     }
 
     // 为每个问题添加项目ID和模块ID
-    const processedIssues = issues.map(issue => ({
-      ...issue,
-      projectId,
-      moduleId: moduleId === 'all' ? undefined : moduleId,
-      // 添加或更新时间戳
-      updatedAt: new Date()
-    }));
+    const processedIssues = issues.map(issue => {
+      // 只保留有值的字段
+      const cleanedIssue = {};
+      Object.entries(issue).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          cleanedIssue[key] = value;
+        }
+      });
+
+      return {
+        ...cleanedIssue,
+        projectId: new mongoose.Types.ObjectId(projectId),
+        moduleId: moduleId === 'all' ? null : (moduleId ? new mongoose.Types.ObjectId(moduleId) : null),
+        updatedAt: new Date()
+      };
+    });
+
+    console.log('处理后的数据:', processedIssues);
 
     // 使用 bulkWrite 批量处理
     const operations = processedIssues.map(issue => {
       const { _id, ...issueData } = issue;
-      return {
-        updateOne: {
-          filter: _id ? { _id } : { 
-            // 如果没有ID，创建新记录
-            projectId,
-            moduleId: moduleId === 'all' ? undefined : moduleId,
-            type: issue.type,
-            description: issue.description,
-            status: issue.status
-          },
-          update: { 
-            $set: issueData,
-            $setOnInsert: { createdAt: new Date() }
-          },
-          upsert: true
-        }
-      };
+      if (_id && mongoose.Types.ObjectId.isValid(_id)) {
+        return {
+          updateOne: {
+            filter: { _id: new mongoose.Types.ObjectId(_id) },
+            update: { $set: issueData },
+            upsert: true
+          }
+        };
+      } else {
+        return {
+          insertOne: {
+            document: {
+              ...issueData,
+              createdAt: new Date()
+            }
+          }
+        };
+      }
     });
 
-    await Issue.bulkWrite(operations);
+    console.log('数据库操作:', operations);
+
+    const result = await Issue.bulkWrite(operations);
+    console.log('数据库操作结果:', result);
     
     // 获取更新后的问题列表
-    const query = { projectId };
+    const query = { projectId: new mongoose.Types.ObjectId(projectId) };
     if (moduleId && moduleId !== 'all') {
-      query.moduleId = moduleId;
+      query.moduleId = new mongoose.Types.ObjectId(moduleId);
     }
-    const updatedIssues = await Issue.find(query).sort({ createdAt: -1 });
+    const updatedIssues = await Issue.find(query)
+      .sort({ createdAt: -1 })
+      .exec();
+
     res.json(updatedIssues);
   } catch (error) {
     console.error('Error batch updating issues:', error);
-    res.status(400).json({ 
-      message: '批量更新问题失败', 
+    res.status(500).json({ 
+      message: '保存问题失败',
       error: error.message,
-      details: error.stack 
+      details: error.errors ? Object.values(error.errors).map(err => err.message) : undefined,
+      stack: error.stack
     });
   }
 });
