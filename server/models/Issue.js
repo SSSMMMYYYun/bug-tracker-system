@@ -2,47 +2,65 @@ const mongoose = require('mongoose');
 
 const issueSchema = new mongoose.Schema({
   projectId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Project',
+    type: String,
     required: true
   },
   moduleId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Module'
+    type: String
   },
-  id: String,
   type: {
     type: String,
-    enum: ['bug', 'feature', 'optimization'],
-    default: 'feature'
+    default: ''
   },
   status: {
     type: String,
-    enum: ['open', 'in_progress', 'done'],
-    default: 'open'
+    default: ''
+  },
+  description: {
+    type: String,
+    default: ''
   },
   priority: {
     type: String,
-    enum: ['high', 'medium', 'low'],
-    default: 'medium'
+    default: ''
   },
-  title: String,
-  description: String,
-  assignee: String,
-  reporter: String,
-  createTime: {
+  reporter: {
+    type: String,
+    default: ''
+  },
+  reportTime: {
+    type: Date,
+    default: null
+  },
+  resolver: {
+    type: String,
+    default: ''
+  },
+  resolveTime: {
+    type: Date,
+    default: null
+  },
+  comment: {
+    type: String,
+    default: ''
+  },
+  createdAt: {
     type: Date,
     default: Date.now
   },
-  updateTime: {
+  updatedAt: {
     type: Date,
     default: Date.now
   }
 }, {
-  timestamps: {
-    createdAt: 'createTime',
-    updatedAt: 'updateTime'
-  }
+  timestamps: true // 自动管理 createdAt 和 updatedAt
 });
+
+// 创建索引以提高查询性能
+issueSchema.index({ projectId: 1, moduleId: 1 });
+issueSchema.index({ type: 1 });
+issueSchema.index({ status: 1 });
+issueSchema.index({ priority: 1 });
+issueSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Issue', issueSchema);

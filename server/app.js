@@ -10,8 +10,10 @@ const app = express();
 
 // 中间件
 app.use(cors({
-  origin: process.env.CORS_ORIGIN,
-  credentials: true
+  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 

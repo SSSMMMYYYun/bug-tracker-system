@@ -1,6 +1,6 @@
 {
   "name": "issue-tracker",
-  "version": "0.1.1",
+  "version": "0.2.1",
   "description": "A collaborative issue tracking system with Excel-like features",
   "scripts": {
     "start": "concurrently \"npm run server\" \"npm run client\"",

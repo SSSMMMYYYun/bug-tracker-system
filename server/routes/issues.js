@@ -30,17 +30,36 @@ router.post('/batch', async (req, res) => {
       return res.status(400).json({ message: '缺少必要参数' });
     }
 
-    const operations = issues.map(issue => ({
-      updateOne: {
-        filter: { _id: issue._id || new mongoose.Types.ObjectId() },
-        update: { 
-          ...issue, 
-          projectId,
-          moduleId: moduleId === 'all' ? undefined : moduleId
-        },
-        upsert: true
-      }
+    // 为每个问题添加项目ID和模块ID
+    const processedIssues = issues.map(issue => ({
+      ...issue,
+      projectId,
+      moduleId: moduleId === 'all' ? undefined : moduleId,
+      // 添加或更新时间戳
+      updatedAt: new Date()
     }));
+
+    // 使用 bulkWrite 批量处理
+    const operations = processedIssues.map(issue => {
+      const { _id, ...issueData } = issue;
+      return {
+        updateOne: {
+          filter: _id ? { _id } : { 
+            // 如果没有ID，创建新记录
+            projectId,
+            moduleId: moduleId === 'all' ? undefined : moduleId,
+            type: issue.type,
+            description: issue.description,
+            status: issue.status
+          },
+          update: { 
+            $set: issueData,
+            $setOnInsert: { createdAt: new Date() }
+          },
+          upsert: true
+        }
+      };
+    });
 
     await Issue.bulkWrite(operations);
     
@@ -49,11 +68,15 @@ router.post('/batch', async (req, res) => {
     if (moduleId && moduleId !== 'all') {
       query.moduleId = moduleId;
     }
-    const updatedIssues = await Issue.find(query);
+    const updatedIssues = await Issue.find(query).sort({ createdAt: -1 });
     res.json(updatedIssues);
   } catch (error) {
     console.error('Error batch updating issues:', error);
-    res.status(400).json({ message: '批量更新问题失败', error: error.message });
+    res.status(400).json({ 
+      message: '批量更新问题失败', 
+      error: error.message,
+      details: error.stack 
+    });
   }
 });
 

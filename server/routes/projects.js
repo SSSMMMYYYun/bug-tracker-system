@@ -48,16 +48,28 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const project = new Project({
-      ...req.body,
-      createdBy: '65b0d5e2e67f2df8e55c0001', // 临时使用一个固定的用户ID
-      members: [{ user: '65b0d5e2e67f2df8e55c0001', role: 'owner' }]
+      name: req.body.name,
+      description: req.body.description
     });
 
     await project.save();
-    res.status(201).json(project);
+    
+    // 添加统计信息
+    const projectWithStats = {
+      ...project.toObject(),
+      stats: {
+        totalIssues: 0,
+        pendingIssues: 0,
+        todayIssues: 0
+      }
+    };
+    
+    res.status(201).json(projectWithStats);
   } catch (error) {
     console.error('创建项目失败:', error);
-    res.status(400).json({ message: '创建项目失败' });
+    res.status(400).json({ 
+      message: '创建项目失败: ' + error.message
+    });
   }
 });
 
